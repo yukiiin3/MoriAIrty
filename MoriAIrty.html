@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoriAIrty - Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1c1f22;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 900px;
+            height: 85%;
+            padding: 20px;
+            background-color: #24282b;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .chat-box {
+            flex-grow: 1;
+            background-color: #1e2225;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow-y: auto;
+            max-height: 500px;
+            font-size: 18px;
+            line-height: 1.8;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .message-input {
+            width: 85%;
+            padding: 16px;
+            border-radius: 50px;
+            background-color: #353b40;
+            color: #d1d1d1;
+            font-size: 18px;
+            border: 2px solid #444b52;
+            outline: none;
+            transition: border-color 0.3s ease-in-out;
+        }
+        .message-input:focus {
+            border-color: #6c757d;
+        }
+        .send-btn {
+            background-color: #4a5157;
+            color: #fef2e7;
+            padding: 14px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .send-btn:hover {
+            background-color: #5c6269;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            max-width: 75%;
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+        }
+        .user-message {
+            background-color: #444b52;
+            align-self: flex-end;
+            text-align: left;
+            border-radius: 18px 18px 0px 18px;
+        }
+        .bot-message {
+            background-color: #2d3237;
+            align-self: flex-start;
+            text-align: left;
+            border-radius: 18px 18px 18px 0px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            padding-top: 20px;
+        }
+        @media screen and (max-width: 768px) {
+            .chat-container {
+                width: 100%;
+                padding: 15px;
+            }
+            .message-input {
+                width: 75%;
+            }
+            .send-btn {
+                width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-box" id="chatBox"></div>
+
+        <div class="input-container">
+            <input type="text" id="messageInput" class="message-input" placeholder="Digite sua mensagem..." />
+            <button class="send-btn" id="sendBtn">Enviar</button>
+        </div>
+
+    </div>
+
+    <script>
+        async function gerarRespostaChatGPT(mensagem) {
+            const apiKey = "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"; // Insira sua chave da OpenAI aqui
+            const url = "https://api.openai.com/v1/chat/completions";
+
+            const headers = {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            };
+
+            const body = JSON.stringify({
+                model: "gpt-3.5-turbo", 
+                messages: [
+                    { role: "system", content: "Você é MoriAIrty, um assistente de IA inteligente e sarcástico inspirado em Moriarty de Sherlock Holmes." },
+                    { role: "user", content: mensagem }
+                ]
+            });
+
+            try {
+                const response = await fetch(url, { method: "POST", headers, body });
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error("Erro na API:", error);
+                return "Desculpe, algo deu errado ao processar sua pergunta.";
+            }
+        }
+
+        async function enviarMensagem() {
+            const mensagemInput = document.getElementById("messageInput");
+            const mensagem = mensagemInput.value.trim();
+            if (mensagem) {
+                exibirMensagem(mensagem, "user"); // Mensagem do usuário
+
+                // Exibe uma resposta temporária enquanto aguarda a IA
+                const botMensagem = exibirMensagem("MoriAIrty está pensando...", "bot");
+
+                // Aguarda a resposta real da IA
+                const resposta = await gerarRespostaChatGPT(mensagem);
+
+                // Atualiza a mensagem com a resposta real
+                botMensagem.textContent = resposta;
+            }
+            mensagemInput.value = ""; // Limpa o campo de entrada
+        }
+
+        function exibirMensagem(mensagem, tipo) {
+            const chatBox = document.getElementById("chatBox");
+            const divMensagem = document.createElement("div");
+            divMensagem.classList.add("chat-message", tipo === "user" ? "user-message" : "bot-message");
+            divMensagem.textContent = mensagem;
+            chatBox.appendChild(divMensagem);
+            chatBox.scrollTop = chatBox.scrollHeight; // Rolar para a última mensagem
+            return divMensagem; // Retorna o elemento para atualização futura (caso necessário)
+        }
+
+        document.getElementById("sendBtn").addEventListener("click", function() {
+            enviarMensagem();
+        });
+
+        document.getElementById("messageInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                enviarMensagem();
+            }
+        });
+    </script>
+
+</body>
+</html>
